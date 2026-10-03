@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0B2A20">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Zain">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Zain Voice Assistant</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap">
+<style>
+:root{
+  --bg:#0B2A20; --bg2:#103828; --panel:#133F2E; --line:rgba(245,238,220,.14);
+  --cream:#F5EEDC; --dim:rgba(245,238,220,.68); --leaf:#3DBE78; --brass:#C99A47; --warn:#E5886A;
+  --display:'Bricolage Grotesque',Georgia,serif; --body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'DM Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:radial-gradient(900px 600px at 50% -10%,var(--bg2),var(--bg));background-color:var(--bg);color:var(--cream);font:400 16px/1.55 var(--body);min-height:100vh;min-height:100dvh;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.app{width:min(640px,100% - 32px);margin-inline:auto;padding-block:18px 40px;display:grid;gap:20px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brand{display:flex;align-items:center;gap:12px;font:800 24px var(--display);letter-spacing:-.02em}
+.brand img{width:44px;height:44px;border-radius:12px;flex:none}
+.brand small{display:block;font:500 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--leaf);margin-top:-3px}
+select,input,button{font:inherit;color:inherit}
+select{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:9px 14px;font-weight:600;min-width:0}
+select option{color:#111}
+:focus-visible{outline:3px solid var(--leaf);outline-offset:3px;border-radius:10px}
+
+.stage{display:grid;justify-items:center;gap:14px;padding-block:10px 2px}
+.orbwrap{position:relative;width:210px;height:210px;display:grid;place-items:center}
+.ring{position:absolute;inset:0;border-radius:50%;border:2px solid var(--leaf);opacity:0}
+.listening .ring{animation:ring 2s ease-out infinite}
+.listening .ring:nth-child(2){animation-delay:.66s}.listening .ring:nth-child(3){animation-delay:1.33s}
+@keyframes ring{0%{transform:scale(.62);opacity:.7}100%{transform:scale(1.15);opacity:0}}
+#mic{position:relative;width:140px;height:140px;border-radius:50%;border:0;cursor:pointer;background:radial-gradient(circle at 32% 28%,#6fe0a2,var(--leaf) 45%,#1d7a4a);box-shadow:0 20px 50px -12px rgba(61,190,120,.65),inset 0 -8px 18px rgba(0,0,0,.25);display:grid;place-items:center;transition:transform .2s}
+#mic:active{transform:scale(.96)}
+.listening #mic{animation:pulse 1.2s ease-in-out infinite}
+.thinking #mic{background:radial-gradient(circle at 32% 28%,#f1cd8a,var(--brass) 50%,#7d5a1f);box-shadow:0 20px 50px -12px rgba(201,154,71,.6)}
+@keyframes pulse{50%{transform:scale(1.07)}}
+#mic svg{width:54px;height:54px}
+.bars{display:none;gap:5px;align-items:center;height:54px}
+.listening #mic svg{display:none}.listening .bars{display:flex}
+.bars i{width:6px;border-radius:4px;background:#0B2A20;animation:bar .9s ease-in-out infinite}
+.bars i:nth-child(1){height:18px}.bars i:nth-child(2){height:34px;animation-delay:.12s}.bars i:nth-child(3){height:48px;animation-delay:.24s}.bars i:nth-child(4){height:30px;animation-delay:.36s}.bars i:nth-child(5){height:16px;animation-delay:.48s}
+@keyframes bar{50%{transform:scaleY(.45)}}
+#state{font:700 21px var(--display);min-height:1.4em;text-align:center}
+#heard{color:var(--dim);min-height:1.5em;text-align:center;font-size:15px;max-width:100%;overflow-wrap:anywhere}
+.row{display:flex;flex-wrap:wrap;gap:10px 18px;justify-content:center;align-items:center}
+.toggle{display:inline-flex;gap:10px;align-items:center;font-size:14px;color:var(--dim);cursor:pointer;user-select:none}
+.toggle input{accent-color:var(--leaf);width:18px;height:18px}
+#install{background:var(--cream);color:var(--bg);border:0;border-radius:999px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:14px}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px;display:grid;gap:12px;min-width:0}
+.card h2{margin:0;font:700 12px var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--leaf)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:8px 14px;font-size:14px;cursor:pointer;transition:background .2s,border-color .2s}
+.chip:hover{background:rgba(61,190,120,.14);border-color:var(--leaf)}
+.typed{display:flex;gap:8px}
+.typed input{flex:1;min-width:0;background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:999px;padding:11px 16px}
+.go{background:var(--cream);color:var(--bg);border:0;border-radius:999px;padding:0 20px;font-weight:700;cursor:pointer}
+
+#log{display:grid;gap:10px}
+.msg{max-width:92%;padding:11px 15px;border-radius:18px;overflow-wrap:anywhere;animation:in .35s ease both}
+.msg.you{justify-self:end;background:var(--cream);color:var(--bg);border-bottom-right-radius:6px}
+.msg.bot{justify-self:start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg a.open{display:inline-block;margin-top:8px;background:var(--leaf);color:#06231a;font-weight:700;border-radius:999px;padding:10px 18px;text-decoration:none}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.empty{color:var(--dim);font-size:15px;text-align:center;padding:6px}
+
+.list{display:grid;gap:8px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:10px 12px;overflow-wrap:anywhere}
+.item .x{background:none;border:0;color:var(--dim);cursor:pointer;font-size:20px;line-height:1;padding:4px 8px}
+.item small{display:block;color:var(--dim);font-family:var(--mono);font-size:12px}
+.t{font:600 18px var(--mono);font-variant-numeric:tabular-nums;color:var(--brass)}
+details summary{cursor:pointer;font-weight:600}
+details .card{margin-top:10px}
+label{font-size:14px;color:var(--dim)}
+.keyin{width:100%;background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+.warn{background:rgba(229,136,106,.14);border:1px solid var(--warn);border-radius:14px;padding:12px 14px;font-size:15px}
+.small{font-size:13px;color:var(--dim)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header>
+    <div class="brand"><img src="icon-192.png" alt="" width="44" height="44"><div>Zain<small>Voice Assistant</small></div></div>
+    <div class="row" style="gap:8px">
+      <button id="install" type="button" hidden>Home screen par lagayein</button>
+      <select id="lang" aria-label="Language">
+        <option value="ur-PK">اردو Urdu</option>
+        <option value="hi-IN">हिन्दी Hindi</option>
+        <option value="en-US">English</option>
+      </select>
+    </div>
+  </header>
+
+  <div id="unsupported" class="warn" hidden>Is browser mein voice recognition nahi hai. Android par Chrome use karein.</div>
+
+  <section class="stage" id="stage">
+    <div class="orbwrap">
+      <div class="ring"></div><div class="ring"></div><div class="ring"></div>
+      <button id="mic" type="button" aria-label="Tap and speak">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#0B2A20" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3" fill="#0B2A20"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8"/></svg>
+        <div class="bars"><i></i><i></i><i></i><i></i><i></i></div>
+      </button>
+    </div>
+    <div id="state">Mic dabayein aur bolein</div>
+    <div id="heard"></div>
+    <div class="row">
+      <label class="toggle"><input type="checkbox" id="keep" checked> Lagataar sunte raho</label>
+      <label class="toggle"><input type="checkbox" id="speak" checked> Jawab bol kar do</label>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Baat cheet</h2>
+    <div id="log"><div class="empty" id="empty">Bolna shuru karein. Jaise: "Open WhatsApp" ya "Call Ali".</div></div>
+  </section>
+
+  <section class="card" id="timersCard" hidden><h2>Timers</h2><div class="list" id="timers"></div></section>
+  <section class="card" id="contactsCard" hidden><h2>Contacts</h2><div class="list" id="contacts"></div></section>
+  <section class="card" id="notesCard" hidden><h2>Notes</h2><div class="list" id="notes"></div></section>
+
+  <section class="card">
+    <h2>Try karein</h2>
+    <div class="chips" id="chips"></div>
+    <form class="typed" id="form">
+      <input id="typed" type="text" placeholder="Ya yahan likhein" autocomplete="off" aria-label="Type a command">
+      <button class="go" type="submit">Go</button>
+    </form>
+  </section>
+
+  <details>
+    <summary>Settings aur AI jawab</summary>
+    <div class="card">
+      <label for="key">Claude API key (optional). Daalne par aam sawalon ka jawab AI dega, warna Google search khulega.</label>
+      <input class="keyin" id="key" type="password" placeholder="sk-ant-..." autocomplete="off">
+      <p class="small" style="margin:0">Key sirf is device ke browser mein save hoti hai.</p>
+    </div>
+  </details>
+</div>
+
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v===null?d:JSON.parse(v);}catch(e){return d;} },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+};
+const isAndroid = /Android/i.test(navigator.userAgent);
+
+/* ---------- language ---------- */
+const L = {
+  "ur-PK": {listen:"Sun raha hoon...", idle:"Mic dabayein aur bolein", think:"Soch raha hoon...", tap:"Ek baar mic dabayein"},
+  "hi-IN": {listen:"सुन रहा हूँ...", idle:"माइक दबाएँ और बोलें", think:"सोच रहा हूँ...", tap:"एक बार माइक दबाएँ"},
+  "en-US": {listen:"Listening...", idle:"Tap the mic and speak", think:"Thinking...", tap:"Tap the mic once"}
+};
+const langSel = $("lang");
+langSel.value = store.get("lang","ur-PK");
+let lang = langSel.value;
+const tr = k => (L[lang]||L["en-US"])[k];
+$("keep").checked = store.get("keep", true);
+
+/* ---------- speech out ---------- */
+let speaking = false;
+function say(text, after){
+  if(!$("speak").checked || !("speechSynthesis" in window)){ after && after(); return; }
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = lang;
+    u.onend = u.onerror = () => { speaking=false; after && after(); };
+    speaking = true;
+    speechSynthesis.speak(u);
+  }catch(e){ speaking=false; after && after(); }
+}
+
+/* ---------- log ---------- */
+function bubble(who, text, link){
+  $("empty") && $("empty").remove();
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  const p = document.createElement("div"); p.textContent = text; d.appendChild(p);
+  if(link){
+    const a = document.createElement("a");
+    a.className="open"; a.href=link.url; a.textContent=link.label;
+    if(!/^(intent|tel|sms|mailto):/.test(link.url)){ a.target="_blank"; a.rel="noopener"; }
+    d.appendChild(a);
+  }
+  $("log").appendChild(d);
+  d.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
+function reply(text, link){ bubble("bot", text, link); say(text, resumeAfterSpeak); }
+function openLink(url, label, intent){
+  const target = (intent && isAndroid) ? intent : url;
+  let ok = false;
+  try{
+    if(/^(intent|tel|sms|mailto):/.test(target)){ location.href = target; ok = true; }
+    else { const w = window.open(target, "_blank", "noopener"); ok = !!w; }
+  }catch(e){}
+  return {url: target, label: ok ? label+" (dobara kholein)" : "Tap to open: "+label};
+}
+const intentApp = (pkg, web) => "intent:#Intent;package="+pkg+";S.browser_fallback_url="+encodeURIComponent(web)+";end";
+const intentAction = (action, extras) => "intent:#Intent;action="+action+";"+(extras||"")+"end";
+
+/* ---------- data: apps, system screens, words ---------- */
+const APPS = {
+  youtube:   {names:["youtube","you tube","यूट्यूब","یوٹیوب"], url:"https://www.youtube.com", pkg:"com.google.android.youtube", label:"YouTube"},
+  whatsapp:  {names:["whatsapp","whats app","व्हाट्सएप","व्हाट्सऐप","वॉट्सऐप","واٹس ایپ","واٹس اپ","واٹسایپ"], url:"https://web.whatsapp.com", pkg:"com.whatsapp", label:"WhatsApp"},
+  facebook:  {names:["facebook","face book","फेसबुक","فیس بک","فیسبک"], url:"https://www.facebook.com", pkg:"com.facebook.katana", label:"Facebook"},
+  instagram: {names:["instagram","insta","इंस्टाग्राम","انسٹاگرام"], url:"https://www.instagram.com", pkg:"com.instagram.android", label:"Instagram"},
+  tiktok:    {names:["tiktok","tik tok","टिकटॉक","ٹک ٹاک"], url:"https://www.tiktok.com", pkg:"com.zhiliaoapp.musically", label:"TikTok"},
+  snapchat:  {names:["snapchat","snap chat","स्नैपचैट","سنیپ چیٹ"], url:"https://www.snapchat.com", pkg:"com.snapchat.android", label:"Snapchat"},
+  gmail:     {names:["gmail","g mail","जीमेल","جی میل"], url:"https://mail.google.com", pkg:"com.google.android.gm", label:"Gmail"},
+  shopify:   {names:["shopify","शॉपिफाई","شاپیفائی"], url:"https://admin.shopify.com", pkg:"com.shopify.mobile", label:"Shopify"},
+  claude:    {names:["claude","क्लाउड","کلاؤڈ"], url:"https://claude.ai", pkg:"com.anthropic.claude", label:"Claude"},
+  linkedin:  {names:["linkedin","लिंक्डइन","لنکڈ ان"], url:"https://www.linkedin.com", pkg:"com.linkedin.android", label:"LinkedIn"},
+  telegram:  {names:["telegram","टेलीग्राम","ٹیلیگرام"], url:"https://web.telegram.org", pkg:"org.telegram.messenger", label:"Telegram"},
+  spotify:   {names:["spotify","स्पॉटिफ़ाई","اسپاٹیفائی"], url:"https://open.spotify.com", pkg:"com.spotify.music", label:"Spotify"},
+  netflix:   {names:["netflix","नेटफ्लिक्स","نیٹ فلکس"], url:"https://www.netflix.com", pkg:"com.netflix.mediaclient", label:"Netflix"},
+  zoom:      {names:["zoom","ज़ूम","زوم"], url:"https://zoom.us", pkg:"us.zoom.videomeetings", label:"Zoom"},
+  canva:     {names:["canva","केनवा","کینوا"], url:"https://www.canva.com", pkg:"com.canva.editor", label:"Canva"},
+  capcut:    {names:["capcut","cap cut","कैपकट","کیپ کٹ"], url:"https://www.capcut.com", pkg:"com.lemon.lvoverseas", label:"CapCut"},
+  daraz:     {names:["daraz","दराज़","دراز"], url:"https://www.daraz.pk", pkg:"com.daraz.android", label:"Daraz"},
+  easypaisa: {names:["easypaisa","easy paisa","ईज़ीपैसा","ایزی پیسہ"], url:"https://easypaisa.com.pk", pkg:"pk.com.telenor.phoenix", label:"Easypaisa"},
+  jazzcash:  {names:["jazzcash","jazz cash","जैज़कैश","جاز کیش"], url:"https://www.jazzcash.com.pk", pkg:"com.techlogix.mobilinkcustomer", label:"JazzCash"},
+  playstore: {names:["play store","playstore","प्ले स्टोर","پلے اسٹور"], url:"https://play.google.com/store", pkg:"com.android.vending", label:"Play Store"},
+  chrome:    {names:["chrome","क्रोम","کروم"], url:"https://www.google.com", pkg:"com.android.chrome", label:"Chrome"},
+  maps:      {names:["google maps","maps","map","मैप","نقشہ"], url:"https://maps.google.com", pkg:"com.google.android.apps.maps", label:"Google Maps"},
+  google:    {names:["google","गूगल","گوگل"], url:"https://www.google.com", pkg:"com.google.android.googlequicksearchbox", label:"Google"}
+};
+const SYSTEM = {
+  camera:   {names:["camera","कैमरा","کیمرہ","کیمرا"], label:"Camera", intent:intentAction("android.media.action.STILL_IMAGE_CAMERA")},
+  settings: {names:["settings","setting","सेटिंग","سیٹنگ"], label:"Settings", intent:intentAction("android.settings.SETTINGS")},
+  wifi:     {names:["wifi","wi-fi","wi fi","वाईफाई","وائی فائی"], label:"WiFi settings", intent:intentAction("android.settings.WIFI_SETTINGS")},
+  bluetooth:{names:["bluetooth","ब्लूटूथ","بلوٹوتھ"], label:"Bluetooth settings", intent:intentAction("android.settings.BLUETOOTH_SETTINGS")},
+  dialer:   {names:["dialer","dial pad","डायलर","ڈائلر"], label:"Phone dialer", intent:intentAction("android.intent.action.DIAL")},
+  alarms:   {names:["alarms","alarm list","अलार्म लिस्ट","الارم لسٹ"], label:"Alarms", intent:intentAction("android.intent.action.SHOW_ALARMS")}
+};
+const OPEN = ["open","kholo","khol do","khol","kholna","chalao","launch","start","खोलो","खोल दो","खोल","चालू करो","کھولو","کھول دو","کھول","چلاؤ"];
+const SEARCH = ["search for","search","google","look up","find","dhoondo","dhundo","dhoondna","talash karo","talash","khojo","dikhao","सर्च करो","सर्च","ढूंढो","ढूँढो","खोजो","तलाश करो","تلاش کرو","تلاش","ڈھونڈو","سرچ کرو","سرچ"];
+const PLAY = ["play","chalao","bajao","suna do","sunao","चलाओ","बजाओ","सुना दो","چلاؤ","بجاؤ","سناؤ"];
+const NOW = ["time","waqt","samay","kitne baje","kya time","टाइम","समय","वक़्त","वक्त","कितने बजे","وقت","کتنے بجے"];
+const TODAY = ["date","tareekh","aaj kya din","kaun sa din","तारीख","आज क्या दिन","تاریخ","آج کیا دن"];
+const NOTE = ["note","likh lo","likho","yaad rakho","yaad rakh","नोट","लिख लो","लिखो","याद रखो","نوٹ","لکھ لو","لکھو","یاد رکھو"];
+const SHOWNOTES = ["show notes","my notes","notes dikhao","mere notes","notes sunao","नोट्स दिखाओ","मेरे नोट्स","نوٹس دکھاؤ","میرے نوٹس"];
+const CLEARNOTES = ["clear notes","delete notes","notes delete","notes saaf","नोट्स हटाओ","نوٹس مٹاؤ","نوٹس ڈیلیٹ"];
+const TIMER = ["timer","alarm","टाइमर","अलार्म","ٹائمر","الارم"];
+const STOP = ["stop","chup","band karo","ruk jao","रुको","चुप","बंद करो","رکو","چپ","بند کرو"];
+const CALL = ["call","phone","dial","kaal","कॉल","फोन","फ़ोन","کال","فون","ملاؤ","milao","मिलाओ"];
+const NAV = ["navigate","directions","route","raasta","rasta","रास्ता","नेविगेट","راستہ","نیویگیٹ"];
+const WEATHER = ["weather","mausam","मौसम","موسم"];
+const SAVEC = ["save contact","add contact","contact save","contact add","number save","save number","कॉन्टैक्ट सेव","कॉन्टैक्ट जोड़","कांटेक्ट सेव","کانٹیکٹ سیو","کانٹیکٹ ایڈ","کانٹیکٹ محفوظ"];
+const PM = ["pm","shaam","sham","raat","dopahar","रात","शाम","दोपहर","شام","رات","دوپہر"];
+
+const norm = s => s.toLowerCase().replace(/[.,!?؟،।"']/g," ").replace(/\s+/g," ").trim();
+const hasAny = (n, arr) => arr.some(w => n.includes(w));
+const hasWord = (n, w) => (" "+n+" ").includes(" "+w+" ");
+const hasW = (n, arr) => arr.some(w => hasWord(n, w));
+function strip(n, arrs){
+  let s = " "+n+" ";
+  arrs.flat().sort((a,b)=>b.length-a.length).forEach(w => { s = s.split(" "+w+" ").join(" "); });
+  return s.replace(/\s+/g," ").trim();
+}
+const toDigits = s => s.replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[०-९]/g,d=>"०१२३४५६७८९".indexOf(d));
+const g = u => "https://www.google.com/search?q="+encodeURIComponent(u);
+const FILL = ["ka","ke","ki","ko","ne","se","to","is","number","naam","name","contact","ke naam se","का","के","की","को","से","नंबर","नाम","کا","کے","کی","کو","سے","نمبر","نام"];
+const intlNum = d => d.startsWith("0") ? "92"+d.slice(1) : d.replace(/^\+/,"");
+
+/* ---------- timers ---------- */
+let timers = [], tid = 0;
+function beep(){
+  try{
+    const C = window.AudioContext||window.webkitAudioContext; const c = new C();
+    [0,.35,.7].forEach(t=>{ const o=c.createOscillator(), gn=c.createGain(); o.frequency.value=880; o.connect(gn); gn.connect(c.destination); gn.gain.setValueAtTime(.2,c.currentTime+t); gn.gain.exponentialRampToValueAtTime(.001,c.currentTime+t+.25); o.start(c.currentTime+t); o.stop(c.currentTime+t+.28); });
+  }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate([300,150,300]); }catch(e){}
+}
+const fmt = s => String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+function drawTimers(){
+  const box = $("timers"); box.innerHTML="";
+  $("timersCard").hidden = timers.length===0;
+  timers.forEach(t=>{
+    const d=document.createElement("div"); d.className="item";
+    const l=document.createElement("span"); l.textContent=t.label;
+    const c=document.createElement("span"); c.className="t"; c.textContent=fmt(Math.max(0,Math.ceil((t.end-Date.now())/1000)));
+    const x=document.createElement("button"); x.className="x"; x.type="button"; x.setAttribute("aria-label","Cancel timer"); x.textContent="×";
+    x.onclick=()=>{ timers=timers.filter(q=>q.id!==t.id); drawTimers(); };
+    const r=document.createElement("span"); r.style.display="flex"; r.style.gap="8px"; r.style.alignItems="center"; r.append(c,x);
+    d.append(l,r); box.appendChild(d);
+  });
+}
+setInterval(()=>{
+  const now=Date.now(); let fired=false;
+  timers.forEach(t=>{ if(!t.done && now>=t.end){ t.done=true; fired=true; beep(); bubble("bot","Timer khatam: "+t.label); say("Time is up. "+t.label); } });
+  if(fired) timers = timers.filter(t=>!t.done);
+  if(timers.length||fired) drawTimers();
+},1000);
+function startTimer(n){
+  const m = toDigits(n).match(/(\d+(?:\.\d+)?)\s*(seconds?|secs?|sec|minutes?|mins?|min|hours?|hrs?|ghanta|ghante|घंटा|घंटे|सेकंड|सेकण्ड|मिनट|منٹ|سیکنڈ|گھنٹہ|گھنٹے)?/);
+  if(!m) return false;
+  const v=parseFloat(m[1]); const u=(m[2]||"minute");
+  let secs = v*60, name="minute";
+  if(/^(sec|सेक|سیک)/.test(u)){ secs=v; name="second"; }
+  else if(/^(hour|hr|ghan|घंट|گھنٹ)/.test(u)){ secs=v*3600; name="hour"; }
+  secs=Math.round(secs);
+  timers.push({id:++tid,end:Date.now()+secs*1000,label:v+" "+name+(v===1?"":"s")});
+  drawTimers();
+  reply("Theek hai, "+v+" "+name+(v===1?"":"s")+" ka timer lag gaya.");
+  return true;
+}
+function tryAlarm(n){
+  if(!hasAny(n,["alarm","अलार्म","الارم"])) return false;
+  if(/(minute|min|second|sec|hour|घंटा|मिनट|سیکنڈ|منٹ|گھنٹ)/.test(n)) return false;
+  const t = toDigits(n);
+  let m = t.match(/(\d{1,2})[: ](\d{2})\b/), h, mi;
+  if(m){ h=+m[1]; mi=+m[2]; }
+  else { m = t.match(/(\d{1,2})\s*(?:baje|बजे|بجے)?/); if(!m) return false; h=+m[1]; mi=0; }
+  if(h>23||mi>59) return false;
+  if(hasAny(n,PM) && h<12) h+=12;
+  if(!isAndroid){ reply("Alarm sirf Android phone par lag sakta hai. Timer ke liye minute batayein."); return true; }
+  const l = openLink("", "Alarm "+String(h).padStart(2,"0")+":"+String(mi).padStart(2,"0"), intentAction("android.intent.action.SET_ALARM","i.android.intent.extra.alarm.HOUR="+h+";i.android.intent.extra.alarm.MINUTES="+mi+";S.android.intent.extra.alarm.MESSAGE=Zain;"));
+  reply("Alarm "+h+":"+String(mi).padStart(2,"0")+" ke liye clock khol raha hoon. Save dabayein.", l);
+  return true;
+}
+
+/* ---------- notes ---------- */
+let notes = store.get("notes",[]);
+function drawNotes(){
+  const box=$("notes"); box.innerHTML="";
+  $("notesCard").hidden = notes.length===0;
+  notes.forEach((t,i)=>{
+    const d=document.createElement("div"); d.className="item";
+    const s=document.createElement("span"); s.textContent=t;
+    const x=document.createElement("button"); x.className="x"; x.type="button"; x.setAttribute("aria-label","Delete note"); x.textContent="×";
+    x.onclick=()=>{ notes.splice(i,1); store.set("notes",notes); drawNotes(); };
+    d.append(s,x); box.appendChild(d);
+  });
+}
+
+/* ---------- contacts ---------- */
+let contacts = store.get("contacts",[]);
+function drawContacts(){
+  const box=$("contacts"); box.innerHTML="";
+  $("contactsCard").hidden = contacts.length===0;
+  contacts.forEach((c,i)=>{
+    const d=document.createElement("div"); d.className="item";
+    const s=document.createElement("span"); s.textContent=c.name;
+    const sm=document.createElement("small"); sm.textContent=c.number; s.appendChild(sm);
+    const x=document.createElement("button"); x.className="x"; x.type="button"; x.setAttribute("aria-label","Delete contact"); x.textContent="×";
+    x.onclick=()=>{ contacts.splice(i,1); store.set("contacts",contacts); drawContacts(); };
+    d.append(s,x); box.appendChild(d);
+  });
+}
+function findContact(n){
+  return contacts.filter(c=>hasWord(n,norm(c.name))).sort((a,b)=>b.name.length-a.name.length)[0] || null;
+}
+
+/* ---------- math ---------- */
+function tryMath(n){
+  let s = toDigits(n)
+    .replace(/\b(plus|add|jama)\b|जमा|جمع/g,"+")
+    .replace(/\b(minus|ghata|subtract)\b|घटा|منفی|تفریق/g,"-")
+    .replace(/\b(times|multiplied by|multiply|into|guna|zarb)\b|गुना|ضرب|\bx\b/g,"*")
+    .replace(/\b(divided by|divide by|divide|bata|bhag)\b|भाग|تقسیم/g,"/")
+    .replace(/\b(what is|calculate|kitne hote hain|kitna hota hai|barabar)\b|कितना होता है|कितने होते हैं|کتنے ہوتے ہیں|کتنا ہوتا ہے/g,"")
+    .replace(/\s+/g,"");
+  if(!/^[\d+\-*/().]+$/.test(s) || !/[+\-*/]/.test(s) || !/\d/.test(s)) return null;
+  try{ const r = Function('"use strict";return ('+s+')')(); return Number.isFinite(r) ? Math.round(r*1e6)/1e6 : null; }catch(e){ return null; }
+}
+
+/* ---------- AI fallback ---------- */
+let history = [];
+async function askAI(text){
+  const key = $("key").value.trim();
+  if(!key) return null;
+  history.push({role:"user",content:text}); history = history.slice(-8);
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-5-5",max_tokens:300,
+      system:"You are Zain, a friendly voice assistant. Answer in the same language the user spoke (Urdu, Hindi or English; use Roman script if they wrote Roman). Reply in at most 3 short sentences, plain speech, no markdown or lists.",
+      messages:history})
+  });
+  if(!res.ok) throw new Error("API "+res.status);
+  const data = await res.json();
+  const out = (data.content||[]).map(b=>b.text||"").join("").trim();
+  history.push({role:"assistant",content:out});
+  return out;
+}
+
+/* ---------- intent router ---------- */
+async function handle(raw){
+  const text = raw.trim(); if(!text) return;
+  bubble("you", text);
+  const n = norm(text);
+  const digits = toDigits(n).replace(/[^\d+ ]/g,"").replace(/\s+/g,"");
+
+  if(hasAny(n, STOP) && n.split(" ").length<=3){ try{speechSynthesis.cancel();}catch(e){} timers=[]; drawTimers(); bubble("bot","Theek hai, ruk gaya."); return; }
+
+  /* save contact by voice */
+  if(hasAny(n, SAVEC) && digits.length>=7){
+    const name = strip(n.replace(/[+\d]+/g," "), [SAVEC, FILL]).trim();
+    if(!name){ reply("Naam bhi batayein. Jaise: save contact Ali 0300 1234567."); return; }
+    const num = digits.startsWith("0") ? "+92"+digits.slice(1) : (digits.startsWith("+")?digits:"+"+digits);
+    contacts = contacts.filter(c=>norm(c.name)!==name); contacts.unshift({name: name.charAt(0).toUpperCase()+name.slice(1), number:num});
+    store.set("contacts",contacts); drawContacts();
+    reply(name.charAt(0).toUpperCase()+name.slice(1)+" ka number save kar liya."); return;
+  }
+
+  if(hasAny(n, TIMER) && !hasAny(n, SYSTEM.alarms.names)){
+    if(tryAlarm(n)) return;
+    if(startTimer(n)) return;
+    reply("Kitne minute ka timer lagana hai? Jaise: timer 5 minutes."); return;
+  }
+
+  if(hasAny(n, CLEARNOTES)){ notes=[]; store.set("notes",notes); drawNotes(); reply("Saare notes mita diye."); return; }
+  if(hasAny(n, SHOWNOTES)){ reply(notes.length ? "Aapke "+notes.length+" notes hain: "+notes.join(". ") : "Abhi koi note nahi hai."); return; }
+  const nm = NOTE.find(w => n.startsWith(w+" "));
+  if(nm){ const body = text.trim().slice(nm.length).replace(/^[\s:,-]+/,""); if(body){ notes.unshift(body); store.set("notes",notes); drawNotes(); reply("Note kar liya: "+body); return; } }
+
+  const mathR = tryMath(n);
+  if(mathR!==null){ reply("Jawab hai "+mathR); return; }
+
+  if(hasW(n, TODAY)){
+    const d=new Date(); reply("Aaj "+d.toLocaleDateString(lang==="en-US"?"en-US":lang,{weekday:"long",day:"numeric",month:"long",year:"numeric"})+" hai."); return;
+  }
+  if(hasW(n, NOW)){
+    const d=new Date(); reply("Abhi "+d.toLocaleTimeString(lang==="en-US"?"en-US":lang,{hour:"numeric",minute:"2-digit"})+" baje hain."); return;
+  }
+
+  /* WhatsApp by saved name or number */
+  if(hasAny(n, APPS.whatsapp.names)){
+    const c = findContact(n);
+    if(c || digits.length>=9){
+      const num = c ? intlNum(c.number.replace(/\D/g,"")) : intlNum(digits);
+      let msg = text.replace(/[+\d\s]{9,}/g," ");
+      APPS.whatsapp.names.forEach(w=>{ msg = msg.replace(new RegExp(w,"ig")," "); });
+      if(c) msg = msg.replace(new RegExp(c.name,"ig")," ");
+      msg = msg.replace(/\b(message|msg|send|bhejo|likho|karo|to|ko|par|pe|per)\b/ig," ").replace(/\s+/g," ").trim();
+      const l = openLink("https://wa.me/"+num+(msg?"?text="+encodeURIComponent(msg):""), "WhatsApp "+(c?c.name:"+"+num));
+      reply((c?c.name:"+"+num)+" ko WhatsApp khol raha hoon.", l); return;
+    }
+  }
+
+  /* call by saved name or number */
+  if(hasW(n, CALL) && !hasAny(n, OPEN)){
+    const c = findContact(n);
+    if(c){ const l=openLink("tel:"+c.number, "Call "+c.name); reply(c.name+" ko call kar raha hoon.", l); return; }
+    if(digits.length>=7){
+      const num = digits.startsWith("0") ? "+92"+digits.slice(1) : digits;
+      const l = openLink("tel:"+num, "Call "+num); reply(num+" ko call kar raha hoon.", l); return;
+    }
+    const who = strip(n,[CALL,FILL]);
+    if(who){ reply(who+" ka number save nahi hai. Bolein: save contact "+who+" 0300 1234567."); return; }
+  }
+
+  if(hasAny(n, NAV)){
+    const q = strip(n,[NAV,FILL]);
+    const l = openLink("https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(q), "Directions: "+q);
+    reply("Raasta dikha raha hoon: "+q, l); return;
+  }
+  if(hasAny(n, WEATHER)){
+    const q = strip(n,[WEATHER,["in","kya","hai","mein","में","क्या","है","کیا","ہے","میں"],FILL]);
+    const l = openLink(g("weather "+q), "Weather "+q);
+    reply("Mausam ka haal dekh raha hoon.", l); return;
+  }
+
+  const tm = n.match(/translate (.+?) (?:to|in|into) (english|urdu|hindi|arabic|french|spanish|german|chinese)/);
+  if(tm){
+    const codes={english:"en",urdu:"ur",hindi:"hi",arabic:"ar",french:"fr",spanish:"es",german:"de",chinese:"zh-CN"};
+    const l = openLink("https://translate.google.com/?sl=auto&tl="+codes[tm[2]]+"&text="+encodeURIComponent(tm[1])+"&op=translate", "Translate to "+tm[2]);
+    reply("Translate kar raha hoon "+tm[2]+" mein.", l); return;
+  }
+
+  if(!hasAny(n, APPS.playstore.names) && (hasW(n, PLAY) || (hasAny(n, APPS.youtube.names) && !hasAny(n,OPEN)))){
+    const q = strip(n,[PLAY,APPS.youtube.names,["on","pe","par","per","पर","पे","پر","پہ","se","से","سے"],OPEN]);
+    if(q){
+      const l = openLink("https://www.youtube.com/results?search_query="+encodeURIComponent(q), "YouTube: "+q);
+      reply("YouTube par "+q+" dhoond raha hoon.", l); return;
+    }
+  }
+
+  if(hasAny(n, OPEN)){
+    const sys = Object.keys(SYSTEM).find(k=>hasAny(n,SYSTEM[k].names));
+    if(sys){
+      if(!isAndroid){ reply("Ye sirf Android phone par khulta hai."); return; }
+      const s=SYSTEM[sys]; const l=openLink("", s.label, s.intent); reply(s.label+" khol raha hoon.", l); return;
+    }
+    const order = Object.keys(APPS).filter(k=>k!=="google"&&k!=="maps").concat(["maps","google"]);
+    const key = order.find(k=>hasAny(n, APPS[k].names));
+    if(key){
+      const a=APPS[key]; const l=openLink(a.url, a.label, intentApp(a.pkg, a.url));
+      reply(a.label+" khol raha hoon.", l); return;
+    }
+    const site = strip(n,[OPEN]).replace(/\s+/g,"");
+    if(/^[a-z0-9-]+\.[a-z.]{2,}$/.test(site)){
+      const l=openLink("https://"+site, site); reply(site+" khol raha hoon.", l); return;
+    }
+    const nameQ = strip(n,[OPEN]);
+    if(nameQ){
+      const l=openLink("https://play.google.com/store/search?q="+encodeURIComponent(nameQ)+"&c=apps", nameQ);
+      reply(nameQ+" mere paas nahi mila. Play Store mein dikha raha hoon.", l); return;
+    }
+  }
+
+  if(hasAny(n, SEARCH)){
+    const q = strip(n,[SEARCH,["for","about","par","pe","ke bare mein","के बारे में","پر","کے بارے میں"]]);
+    if(q){ const l = openLink(g(q), "Search: "+q); reply(q+" search kar raha hoon.", l); return; }
+  }
+
+  setState("think");
+  try{
+    const ai = await askAI(text);
+    if(ai){ reply(ai); return; }
+  }catch(e){ bubble("bot","AI se jawab nahi mila ("+e.message+"). Key check karein."); }
+  const l = openLink(g(text), "Google par dekhein");
+  reply("Iska jawab Google par dhoond raha hoon.", l);
+}
+
+/* ---------- recognition ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec=null, listening=false, starting=false, autoAttempt=true, wl=null;
+function setState(k){
+  const st=$("stage");
+  st.classList.toggle("listening", k==="listen");
+  st.classList.toggle("thinking", k==="think");
+  $("state").textContent = tr(k==="listen"?"listen":k==="think"?"think":k==="tap"?"tap":"idle");
+}
+function resumeAfterSpeak(){
+  if($("keep").checked && SR && !listening && !starting){ setTimeout(()=>startRec(),350); }
+  else if(!listening && !starting){ setState("idle"); }
+}
+async function holdScreen(){
+  try{ if("wakeLock" in navigator && !wl){ wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release",()=>{wl=null;}); } }catch(e){ wl=null; }
+}
+function startRec(){
+  if(!SR){ $("unsupported").hidden=false; return; }
+  if(listening || starting) return;
+  try{ speechSynthesis.cancel(); }catch(e){}
+  starting = true;
+  rec = new SR();
+  rec.lang = lang; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  let finalText = "";
+  rec.onstart = () => { starting=false; listening=true; autoAttempt=false; setState("listen"); $("heard").textContent=""; holdScreen(); };
+  rec.onresult = e => {
+    let interim="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const r=e.results[i];
+      if(r.isFinal) finalText += r[0].transcript; else interim += r[0].transcript;
+    }
+    $("heard").textContent = finalText || interim;
+  };
+  rec.onerror = e => {
+    starting=false;
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){
+      if(autoAttempt){ setState("tap"); }
+      else { $("keep").checked=false; store.set("keep",false); bubble("bot","Mic ki ijazat nahi mili. Browser ki settings mein Microphone Allow karein."); }
+    }
+    else if(e.error==="network"){ bubble("bot","Voice recognition ke liye internet chahiye."); }
+    else if(e.error==="language-not-supported"){ bubble("bot","Ye zubaan is device par support nahi. Koi aur zubaan chunein."); }
+  };
+  rec.onend = () => {
+    starting=false; listening=false;
+    const t = finalText.trim();
+    if(t){ setState("think"); $("heard").textContent=""; handle(t).finally(()=>{ if(!speaking) resumeAfterSpeak(); }); }
+    else if($("state").textContent===tr("tap")){ /* waiting for a tap */ }
+    else if($("keep").checked && !autoAttempt){ setTimeout(()=>{ if(!listening && !starting && !speaking) startRec(); },300); }
+    else setState("idle");
+  };
+  try{ rec.start(); }catch(e){ starting=false; }
+}
+function stopRec(){
+  $("keep").checked=false; store.set("keep",false);
+  try{ rec && rec.abort(); }catch(e){}
+  listening=false; starting=false; setState("idle");
+}
+
+$("mic").addEventListener("click",()=>{ autoAttempt=false; if(listening){ stopRec(); } else { $("keep").checked=true; store.set("keep",true); startRec(); } });
+$("keep").addEventListener("change",()=>{
+  store.set("keep",$("keep").checked);
+  if($("keep").checked && !listening){ autoAttempt=false; startRec(); }
+  if(!$("keep").checked && listening){ try{rec.stop();}catch(e){} }
+});
+$("form").addEventListener("submit",e=>{ e.preventDefault(); const v=$("typed").value; $("typed").value=""; handle(v).catch(()=>{}); });
+langSel.addEventListener("change",()=>{ lang=langSel.value; store.set("lang",lang); try{rec&&rec.abort();}catch(e){} listening=false; starting=false; setState("idle"); if($("keep").checked) setTimeout(()=>{autoAttempt=false;startRec();},250); });
+$("key").value = store.get("key","");
+$("key").addEventListener("change",()=>store.set("key",$("key").value.trim()));
+
+/* auto start: on open, on first touch, and when the app comes back to the screen */
+window.addEventListener("load",()=>{ if($("keep").checked) setTimeout(startRec,500); });
+document.addEventListener("pointerdown",()=>{ if($("keep").checked && !listening && !starting){ autoAttempt=false; startRec(); } },{once:true});
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible"){ holdScreen(); if($("keep").checked && !listening && !starting) startRec(); }
+  else { try{rec&&rec.abort();}catch(e){} listening=false; starting=false; }
+});
+
+/* install button */
+let deferred=null;
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferred=e; $("install").hidden=false; });
+$("install").addEventListener("click",async()=>{ if(!deferred) return; deferred.prompt(); try{ await deferred.userChoice; }catch(e){} deferred=null; $("install").hidden=true; });
+window.addEventListener("appinstalled",()=>{ $("install").hidden=true; });
+if("serviceWorker" in navigator && (location.protocol==="https:"||location.hostname==="localhost")){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+
+/* quick commands */
+["Open WhatsApp","Open YouTube","Open camera","Save contact Ali 0300 1234567","Call Ali","Search best Shopify themes","Timer 2 minutes","Alarm 7 30","Note call the supplier","Kitne baje hain"].forEach(t=>{
+  const b=document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=t;
+  b.onclick=()=>handle(t).catch(()=>{}); $("chips").appendChild(b);
+});
+
+if(!SR) $("unsupported").hidden=false;
+setState("idle"); drawNotes(); drawContacts();
+})();
+</script>
+</body>
+</html>
